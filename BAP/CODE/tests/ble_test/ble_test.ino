@@ -14,6 +14,10 @@ bool oldDeviceConnected = false;
 int BUTTON_PIN = 12;
 long StartMillis;
 
+int ButtonValue;
+int SensorValue;
+ uint8_t dataPacket[4];
+
 #define BUTTON_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define BUTTON_CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"  // char > property notify
 
@@ -58,11 +62,12 @@ void setup() {
 }
 
 void loop() {
-  int buttonValue = analogRead(BUTTON_PIN);
+   ButtonValue = analogRead(BUTTON_PIN);
   if (deviceConnected) {
-    char ValStr[3];
-    dtostrf(buttonValue,2,0,ValStr);
-    pCharacteristic->setValue(ValStr);
+    // char ValStr[3];
+    // dtostrf(buttonValue,2,0,ValStr);
+  toByte();
+    pCharacteristic->setValue(dataPacket,4);
     if (millis() - StartMillis > 1000) {
       pCharacteristic->notify();
       StartMillis = millis();
@@ -81,4 +86,16 @@ void loop() {
   // if (deviceConnected && !oldDeviceConnected) {
   //   oldDeviceConnected = deviceConnected;
   // }
+}
+
+void toByte(){
+
+    dataPacket[0] = (ButtonValue >> 8) & 0xFF; // High byte
+    dataPacket[1] = ButtonValue & 0xFF;        // Low byte
+    dataPacket[2] = 1;
+    dataPacket[3] = 1;
+    
+    // dataPacket[2] = (sensorValue2 >> 8) & 0xFF; // High byte
+    // dataPacket[3] = sensorValue2 & 0xFF;        // Low byte
+
 }
