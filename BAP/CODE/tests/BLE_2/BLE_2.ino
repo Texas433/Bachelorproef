@@ -44,10 +44,7 @@ void setup() {
   pServer->setCallbacks(new MyServerCallbacks());
 
   BLEService *pService = pServer->createService("12345678-1234-1234-1234-123456789abc");
-  pCharacteristic = pService->createCharacteristic(
-                     "87654321-4321-4321-4321-abc123456789",
-                     BLECharacteristic::PROPERTY_NOTIFY
-                   );
+  pCharacteristic = pService->createCharacteristic( "87654321-4321-4321-4321-abc123456789", BLECharacteristic::PROPERTY_NOTIFY);
   pCharacteristic->addDescriptor(new BLE2902());
 
   pService->start();
