@@ -1,0 +1,12 @@
+MH-Z19B - temperatuur en humiditeit - UART
+
+
+
+
+
+
+UART => 1 mbps - End to end, voor bluetooth sensoren gps etc -
+
+SPI => 10+mbps - voor displays adc, sd - 
+
+I²C => 3.5mbps - sensoren -
