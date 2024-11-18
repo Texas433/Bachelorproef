@@ -50,7 +50,13 @@ android {
 }
 
 dependencies {
-    implementation("com.android.")
+    implementation("no.nordicsemi.android:ble:2.4.0") { // Replace with the latest version
+        exclude group: "org.jetbrains.kotlinx", module: "kotlinx-coroutines-core"
+    }
+    implementation("no.nordicsemi.android:ble-common:2.4.0") { // Replace with the latest version
+        exclude group: "org.jetbrains.kotlinx", module: "kotlinx-coroutines-core"
+    }
+    implementation(libs.ble.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

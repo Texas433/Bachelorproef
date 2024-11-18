@@ -1,0 +1,7 @@
+Belangrijke Componenten in de App:
+
+    BLEService: Een service die verantwoordelijk is voor het verbinden met de sensor via BLE en het ontvangen van versleutelde gegevens.
+    DataManager: Beheert het proces van het verzamelen van versleutelde gegevens en het verzenden naar de server.
+    APIClient: Verantwoordelijk voor het communiceren met de server via Retrofit of OkHttp voor zowel POST- als GET-requests.
+    ConfigManager: Beheert de configuraties van de app, zoals het serveradres en de status van de dataoverdracht.
+    UI: Bestaat uit verschillende schermen voor configuratiebeheer en het weergeven van de ontsleutelde gegevens.

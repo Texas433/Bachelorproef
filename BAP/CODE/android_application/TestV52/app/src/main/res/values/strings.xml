@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TestV5</string>
+    <string name ="DataTXT">Waiting for data...</string>
+</resources>

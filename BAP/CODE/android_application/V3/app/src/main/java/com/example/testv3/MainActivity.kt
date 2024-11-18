@@ -1,47 +1,57 @@
 package com.example.testv3
 
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.os.Bundle
+import android.widget.Button
+import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.testv3.ui.theme.TestV3Theme
+import androidx.core.content.ContextCompat
+import no.nordicsemi.android.ble.BleManager
+import no.nordicsemi.android.ble.data.Data
+import no.nordicsemi.android.ble.observer.ConnectionObserver
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var bleManager: MyBleManager
+    private lateinit var dataTextView: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            TestV3Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+        setContentView(R.layout.activity_main)
+
+        val connectButton: Button = findViewById(R.id.connectButton)
+        dataTextView = findViewById(R.id.dataTextView)
+
+        // Initialiseer BLE-manager
+        bleManager = MyBleManager(this)
+
+        // Stel de callback in voor ontvangen data
+        bleManager.onDataReceived = { data ->
+            runOnUiThread {
+                dataTextView.text = "Data: $data"
             }
         }
+
+        // Verbind met het apparaat wanneer op de knop wordt gedrukt
+        connectButton.setOnClickListener {
+            connectToDevice()
+        }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    private fun connectToDevice() {
+        // Zoek en verbind met het gewenste apparaat (ESP32) hier
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+        val device: BluetoothDevice? = bluetoothAdapter.getRemoteDevice("MAC_ADDRESS_HERE") // Vul het MAC-adres in
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TestV3Theme {
-        Greeting("Android")
+        if (device != null) {
+            bleManager.connect(device)
+                .retry(3, 100)  // Optioneel: opnieuw proberen bij verbindingsproblemen
+                .enqueue()
+        } else {
+            dataTextView.text = "Apparaat niet gevonden"
+        }
     }
 }

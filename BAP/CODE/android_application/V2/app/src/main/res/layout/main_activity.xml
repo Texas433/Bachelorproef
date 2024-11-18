@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect" />
+
+    <TextView
+        android:id="@+id/dataTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/connectButton"
+        android:layout_marginTop="20dp"
+        android:text="Data: "
+        android:textStyle="bold"
+        android:textSize="18sp" />
 
     <ListView
-        android:id="@+id/deviceListView"
-        android:layout_width="314dp"
-        android:layout_height="536dp"
-        android:layout_gravity="center"
-        android:layout_marginLeft="20dp"
-        android:layout_marginTop="100dp"
-        android:background="#972A5D94"
-        android:clickable="true" />
-</LinearLayout>
+        android:id="@+id/dataListView"
+        android:layout_width="347dp"
+        android:layout_height="578dp"
+        android:layout_marginTop="100dp"/>
+
+</RelativeLayout>

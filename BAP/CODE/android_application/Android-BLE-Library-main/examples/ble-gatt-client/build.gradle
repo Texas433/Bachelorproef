@@ -23,7 +23,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    task wrapper(type: Wrapper){
+        gradleVersion = '8.4.0'
+    }
+    task prepareKotlinBuildScriptModel {
 
+    }
     buildFeatures {
         buildConfig true
     }
