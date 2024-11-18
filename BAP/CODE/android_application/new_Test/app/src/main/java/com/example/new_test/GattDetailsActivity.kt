@@ -4,7 +4,9 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -20,7 +22,6 @@ class GattDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gatt_details)
 
-        // Initialiseer de TextView voor het tonen van de gelezen gegevens
         characteristicDataTextView = findViewById(R.id.characteristicData)
 
         // Haal de BluetoothDevice op via de Intent
@@ -50,8 +51,9 @@ class GattDetailsActivity : AppCompatActivity() {
 
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
+            Log.d("GattDetailsActivity", "onServicesDiscovered: status=$status")
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                // Zodra de services zijn ontdekt, lees het kenmerk
                 val serviceUUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
                 val characteristicUUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
 
@@ -59,23 +61,79 @@ class GattDetailsActivity : AppCompatActivity() {
                 val characteristic = service?.getCharacteristic(characteristicUUID)
 
                 if (characteristic != null) {
+                    // Schakel notificaties in voor het kenmerk
+                    enableNotifications(characteristic)
+                    Log.d("GattDetailsActivity", "Kenmerk gevonden: ${characteristic.uuid}")
+                    // Lees het kenmerk opnieuw
                     readGattCharacteristic(characteristic)
                 } else {
+                    Log.d("GattDetailsActivity", "Kenmerk niet gevonden voor UUID: $characteristicUUID")
                     runOnUiThread {
                         Toast.makeText(this@GattDetailsActivity, "Kenmerk niet gevonden", Toast.LENGTH_SHORT).show()
                     }
+                }
+            } else {
+                runOnUiThread {
+                    Toast.makeText(this@GattDetailsActivity, "Services niet ontdekt: $status", Toast.LENGTH_SHORT).show()
                 }
             }
         }
 
         override fun onCharacteristicRead(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
             super.onCharacteristicRead(gatt, characteristic, status)
+
+            Log.d("GattDetailsActivity", "onCharacteristicRead: status=$status")
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val value = characteristic?.value
-                runOnUiThread {
-                    Toast.makeText(this@GattDetailsActivity, "Gelezen data: ${value?.contentToString()}", Toast.LENGTH_SHORT).show()
-                    characteristicDataTextView.text = "Gelezen data: ${value?.contentToString()}"
+                if (value != null && value.isNotEmpty()) {
+                    val result = String(value, Charsets.UTF_8)
+                    Log.d("GattDetailsActivity", "Gelezen data: $result")
+                    runOnUiThread {
+                        characteristicDataTextView.text = "Gelezen data: $result"
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@GattDetailsActivity, "Leeg of geen waarde ontvangen", Toast.LENGTH_SHORT).show()
+                    }
                 }
+            } else {
+                runOnUiThread {
+                    Toast.makeText(this@GattDetailsActivity, "Fout bij het lezen van het kenmerk", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
+            super.onCharacteristicChanged(gatt, characteristic)
+            if (characteristic != null) {
+                val value = characteristic.value
+                val result = String(value, Charsets.UTF_8)
+                Log.d("GattDetailsActivity", "Notificatie ontvangen: $result")
+
+                // Update de UI met de nieuwe waarde
+                runOnUiThread {
+                    characteristicDataTextView.text = "Nieuwe data ontvangen: $result"
+                }
+            }
+        }
+    }
+
+    // Functie om notificaties in te schakelen voor het kenmerk
+    private fun enableNotifications(characteristic: BluetoothGattCharacteristic) {
+        val gatt = gatt
+        if (gatt != null) {
+            // Schakel notificaties in voor het kenmerk
+            gatt.setCharacteristicNotification(characteristic, true)
+
+            // Haal de descriptor op voor de Client Characteristic Configuration Descriptor (CCCD)
+            val descriptor = characteristic.getDescriptor(
+                UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+            )
+
+            if (descriptor != null) {
+                descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                gatt.writeDescriptor(descriptor)
             }
         }
     }
@@ -92,9 +150,8 @@ class GattDetailsActivity : AppCompatActivity() {
         gatt = null
     }
 
-    // Functie voor het opnieuw lezen van het kenmerk
+    // Functie die door een knop in de UI wordt aangeroepen om het kenmerk opnieuw te lezen
     fun readCharacteristicAgain(view: View) {
-        // Haal de karakteristiek opnieuw op en lees het
         val serviceUUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
         val characteristicUUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
 
@@ -104,8 +161,6 @@ class GattDetailsActivity : AppCompatActivity() {
         if (characteristic != null) {
             // Lees het kenmerk opnieuw
             readGattCharacteristic(characteristic)
-            val value = characteristic?.value
-            characteristicDataTextView.text = "Gelezen data: ${value?.contentToString()}"
         } else {
             Toast.makeText(this, "Kenmerk niet gevonden", Toast.LENGTH_SHORT).show()
         }

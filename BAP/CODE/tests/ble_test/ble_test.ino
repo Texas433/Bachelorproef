@@ -14,9 +14,8 @@ bool oldDeviceConnected = false;
 int BUTTON_PIN = 13;
 int LDR_PIN = 12;
 long StartMillis;
-
+char resultaat[50]; 
 int ButtonValue, LDRValue;
-
 uint8_t dataPacket[4];
 
 #define BUTTON_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
@@ -41,7 +40,6 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT);
   pinMode(LDR_PIN, INPUT);
   BLEDevice::init("ESP32");
-
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
@@ -74,14 +72,18 @@ void loop() {
   ButtonValue = analogRead(BUTTON_PIN);
   if (deviceConnected) {
     toByte();
-    pCharacteristic->setValue(dataPacket, 4);
+    voegIntegerToeAanString(resultaat, "buttonval:", ButtonValue);
+    pCharacteristic->setValue((uint8_t*)resultaat, strlen(resultaat));
+    Serial.println(resultaat);
     if (millis() - StartMillis > 1000) {
       pCharacteristic->notify();
       StartMillis = millis();
     }
   }
 }
-
+void voegIntegerToeAanString(char *resultaat, const char *tekst, int waarde) {
+  snprintf(resultaat, 50, "%s %d", tekst, waarde);
+}
 void toByte() {
   dataPacket[0] = (ButtonValue >> 8) & 0xFF; // High byte
   dataPacket[1] = ButtonValue & 0xFF;        // Low byte
