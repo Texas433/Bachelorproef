@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Device Dashboard</h1>
+
+    <h2>Registered Devices</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Device ID</th>
+                <th>MAC Address</th>
+                <th>Status</th>
+                <th>User ID</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for device in devices %}
+            <tr>
+                <td>{{ device.device_id }}</td>
+                <td>{{ device.mac_address }}</td>
+                <td>{{ "Allowed" if device.is_allowed else "Blocked" }}</td>
+                <td>{{ device.user_id }}</td>
+                <td>{{ device.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Connection Logs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Log ID</th>
+                <th>Device ID</th>
+                <th>MAC Address</th>
+                <th>Connection Status</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.log_id }}</td>
+                <td>{{ log.device_id }}</td>
+                <td>{{ log.mac_address }}</td>
+                <td>{{ "Successful" if log.connection_status else "Failed" }}</td>
+                <td>{{ log.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Sensor Data</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Data ID</th>
+                <th>User ID</th>
+                <th>Temperature</th>
+                <th>Humidity</th>
+                <th>Pressure</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in sensor_data %}
+            <tr>
+                <td>{{ data.data_id }}</td>
+                <td>{{ data.user_id }}</td>
+                <td>{{ data.temperature }}</td>
+                <td>{{ data.humidity }}</td>
+                <td>{{ data.pressure }}</td>
+                <td>{{ data.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

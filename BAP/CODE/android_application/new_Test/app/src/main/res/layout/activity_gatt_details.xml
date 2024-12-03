@@ -5,25 +5,41 @@
         android:layout_height="match_parent"
         tools:context=".GattDetailsActivity">
 
-    <!-- TextView voor het tonen van de gelezen data -->
+
+      <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            android:theme="@style/AppTheme"
+            app:titleTextColor="@color/White"
+            app:popupTheme="@style/AppTheme" />
+
+
     <TextView
             android:id="@+id/characteristicData"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Kenmerk Data"
+            android:text="Placeholder"
             android:textSize="18sp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="368dp" />
 
-    <!-- Button om opnieuw een kenmerk te lezen -->
+
+
     <Button
             android:id="@+id/readButton"
+            style="?android:attr/headerBackground"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lees Kenmerk"
+            android:text="refresh"
             android:onClick="readCharacteristicAgain"
             app:layout_constraintTop_toBottomOf="@id/characteristicData"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="288dp"
+            app:layout_constraintHorizontal_bias="0.498" />
 </androidx.constraintlayout.widget.ConstraintLayout>

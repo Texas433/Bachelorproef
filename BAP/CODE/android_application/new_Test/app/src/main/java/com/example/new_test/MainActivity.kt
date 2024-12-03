@@ -14,8 +14,10 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -31,8 +33,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         requestBluetoothPermissions()  //BLE permissions moeten tijdens runtime gevraagd worden
-    }
 
+        val toolbarr = findViewById<Toolbar>(R.id.toolbarr)
+        setSupportActionBar(toolbarr)
+        supportActionBar?.title = "GATTER"
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+    }
     // Vraag de Bluetooth-permissies aan voor Android 12+ (API 31)
     private fun requestBluetoothPermissions() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
@@ -107,8 +113,8 @@ class MainActivity : AppCompatActivity() {
 
         val recyclerView: RecyclerView = findViewById(R.id.deviceList)
         recyclerView.layoutManager = LinearLayoutManager(this)
-
-        // Maak de adapter met een lege lijst en voeg de klikfunctionaliteit toe
+        val dividerItemDecoration = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(dividerItemDecoration)
         deviceListAdapter = DeviceListAdapter(emptyList()) { device ->
             connectToDevice(device)  // Start de verbinding met het geselecteerde apparaat
         }
@@ -116,6 +122,7 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothLeScanner.startScan(scanCallback)
     }
+
 
     @SuppressLint("MissingPermission")
     private fun connectToDevice(device: BluetoothDevice) {
@@ -164,16 +171,19 @@ class MainActivity : AppCompatActivity() {
         override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult?) {
             super.onScanResult(callbackType, result)
             result?.device?.let { device ->
-                // Verkrijg de huidige lijst van apparaten uit de adapter
-                val currentList = deviceListAdapter.getDevices().toMutableList()
+                val deviceName = device.name
+                if (!deviceName.isNullOrEmpty()) {
+                    // Verkrijg de huidige lijst van apparaten uit de adapter
+                    val currentList = deviceListAdapter.getDevices().toMutableList()
 
-                // Voeg het nieuwe apparaat toe aan de lijst
-                if (!currentList.contains(device)) { // Controleer of het apparaat al in de lijst staat
-                    currentList.add(device)
+                    // Voeg het nieuwe apparaat toe aan de lijst
+                    if (!currentList.contains(device)) { // Controleer of het apparaat al in de lijst staat
+                        currentList.add(device)
+
+                        // Werk de adapter bij met de nieuwe lijst
+                        deviceListAdapter.updateDeviceList(currentList)
+                    }
                 }
-
-                // Werk de adapter bij met de nieuwe lijst
-                deviceListAdapter.updateDeviceList(currentList)
             }
         }
 
