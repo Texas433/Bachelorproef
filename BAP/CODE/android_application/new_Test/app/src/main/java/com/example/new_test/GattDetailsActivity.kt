@@ -1,5 +1,6 @@
 package com.example.new_test
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -79,6 +80,7 @@ class GattDetailsActivity : AppCompatActivity() {
 
     // GATT Callback om de verbinding te beheren
     private val gattCallback = object : BluetoothGattCallback() {
+        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             super.onConnectionStateChange(gatt, status, newState)
             if (newState == BluetoothGatt.STATE_CONNECTED) {
@@ -90,6 +92,21 @@ class GattDetailsActivity : AppCompatActivity() {
                 }
             }
         }
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            super.onMtuChanged(gatt, mtu, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("GattDetailsActivity", "MTU succesvol gewijzigd naar: $mtu bytes")
+                runOnUiThread {
+                    Toast.makeText(this@GattDetailsActivity, "MTU ingesteld op $mtu bytes", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Log.d("GattDetailsActivity", "MTU wijziging mislukt")
+                runOnUiThread {
+                    Toast.makeText(this@GattDetailsActivity, "MTU wijziging mislukt", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
 
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
@@ -148,7 +165,7 @@ class GattDetailsActivity : AppCompatActivity() {
             super.onCharacteristicChanged(gatt, characteristic)
             if (characteristic != null) {
                 val value = characteristic.value
-                val result = String(value, Charsets.UTF_8)
+                val result  = value.joinToString(" ") { byte -> "%02X".format(byte) }
                 Log.d("GattDetailsActivity", "Notificatie ontvangen: $result")
 
                 // Update de UI met de nieuwe waarde
