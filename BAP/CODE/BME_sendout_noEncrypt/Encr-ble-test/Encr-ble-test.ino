@@ -1,0 +1,198 @@
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+#include <BLE2901.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
+#include "Adafruit_BME680.h"
+#include <mbedtls/aes.h>
+#include <mbedtls/sha256.h>
+#include <esp_system.h> // For esp_random()
+#include <string.h>
+#include <stdio.h>
+
+// Constants for BLE and sensor
+#define DEVICE_ID 20
+#define BME_SCK 18
+#define BME_MISO 19
+#define BME_MOSI 23
+#define BME_CS 5
+#define BME_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define BME_CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+// Constants for encryption
+#define BUFFER_SIZE 256
+#define IV_SIZE 16
+#define HEADER_SIZE 24
+
+BLEServer *pServer = NULL;
+BLECharacteristic *pCharacteristic = NULL;
+BLE2901 *descriptor_2901 = NULL;
+
+bool deviceConnected = false;
+long StartMillis = 0;
+char resultaat[100]; // String to hold sensor data
+int timer = 1000;
+
+Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
+float temperature, pressure, humidity;
+
+// AES setup
+unsigned char key[16] = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', 'E', 'F' };
+unsigned char iv[IV_SIZE];
+
+class MyServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *pServer) {
+    deviceConnected = true;
+  };
+
+  void onDisconnect(BLEServer *pServer) {
+    deviceConnected = false;
+  }
+
+  void onMtuChanged(uint16_t mtu, esp_ble_gatts_cb_param_t* param) {
+    Serial.print("Onderhandelde MTU: ");
+    Serial.println(mtu);
+  }
+};
+
+size_t addPadding(unsigned char* buffer, size_t original_len);
+void generateRandomIV(unsigned char* iv, size_t len);
+void readSensorData();
+void sendEncryptedData();
+
+void setup() {
+  Serial.begin(115200);
+
+  if (!bme.begin()) {
+    Serial.println("Error: BME680 not detected!");
+    while (1);
+  }
+
+  bme.setTemperatureOversampling(BME680_OS_8X);
+  bme.setHumidityOversampling(BME680_OS_2X);
+  bme.setPressureOversampling(BME680_OS_4X);
+
+  BLEDevice::init("ESP32");
+  BLEDevice::setMTU(256);
+
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  BLEService *pService = pServer->createService(BME_SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(BME_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_NOTIFY);
+  pCharacteristic->addDescriptor(new BLE2902());
+  descriptor_2901 = new BLE2901();
+  descriptor_2901->setDescription("Encrypted Sensor Data");
+  pCharacteristic->addDescriptor(descriptor_2901);
+
+  pService->start();
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(BME_SERVICE_UUID);
+  BLEDevice::startAdvertising();
+
+  Serial.println("BLE server started. Waiting for connections...");
+}
+
+void loop() {
+  if (deviceConnected) {
+    if (millis() - StartMillis > timer) {
+      readSensorData();
+      sendEncryptedData();
+      StartMillis = millis();
+    }
+  }
+}
+
+void readSensorData() {
+  if (bme.performReading()) {
+    temperature = bme.temperature;
+    pressure = bme.pressure / 100.0;
+    humidity = bme.humidity;
+    snprintf(resultaat, sizeof(resultaat), "%d|%.1fC|%.1fhPA|%.1f%%", DEVICE_ID, temperature, pressure, humidity);
+  } else {
+    snprintf(resultaat, sizeof(resultaat), "Error: Failed to read from BME680!");
+  }
+}
+
+void sendEncryptedData() {
+  unsigned char input[BUFFER_SIZE] = {0};
+  unsigned char encrypted[BUFFER_SIZE] = {0};
+  unsigned char iv_copy[IV_SIZE];
+  unsigned char sha256_digest[32];
+  unsigned char packet[BUFFER_SIZE + IV_SIZE + HEADER_SIZE + 32] = {0};
+
+  mbedtls_aes_context aes;
+  mbedtls_aes_init(&aes);
+
+  size_t message_len = strlen(resultaat);
+  memcpy(input, resultaat, message_len);
+  size_t padded_len = addPadding(input, message_len);
+
+  mbedtls_sha256_context sha_ctx;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts(&sha_ctx, 0);
+  mbedtls_sha256_update(&sha_ctx, input, padded_len);
+  mbedtls_sha256_finish(&sha_ctx, sha256_digest);
+  mbedtls_sha256_free(&sha_ctx);
+
+  generateRandomIV(iv, IV_SIZE);
+  memcpy(iv_copy, iv, IV_SIZE);
+
+  mbedtls_aes_setkey_enc(&aes, key, 128);
+  if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, padded_len, iv, input, encrypted) != 0) {
+    Serial.println("Encryption failed.");
+    return;
+  }
+
+  unsigned char header[HEADER_SIZE] = { 'H', 'E', 'A', 'D', 'E', 'R', 'F', 'I', 'X', 'E', 'D', '-', 'D', 'A', 'T', 'A', '-', '-', '-', '-', '-', '-', '-' ,'-' };
+  memcpy(packet, header, HEADER_SIZE);
+  memcpy(packet + HEADER_SIZE, iv_copy, IV_SIZE);
+  memcpy(packet + HEADER_SIZE + IV_SIZE, encrypted, padded_len);
+  memcpy(packet + HEADER_SIZE + IV_SIZE + padded_len, sha256_digest, 32);
+
+  size_t total_len = HEADER_SIZE + IV_SIZE + padded_len + 32;
+
+  pCharacteristic->setValue(packet, total_len);
+  pCharacteristic->notify();
+
+  // Debug output
+  Serial.println("=== HEX PACKET BEGIN ===");
+  for (size_t i = 0; i < total_len; i++) {
+    Serial.printf("%02X", packet[i]);
+  }
+  Serial.println("\n=== HEX PACKET END ===");
+
+  Serial.print("Original Data: ");
+  Serial.println(resultaat);
+
+  Serial.print("Encrypted Data (Hex): ");
+  for (size_t i = 0; i < padded_len; i++) {
+    Serial.printf("%02X ", encrypted[i]);
+  }
+  Serial.println();
+
+  Serial.print("IV (Hex): ");
+  for (size_t i = 0; i < IV_SIZE; i++) {
+    Serial.printf("%02X ", iv[i]);
+  }
+  Serial.println();
+
+  mbedtls_aes_free(&aes);
+}
+
+size_t addPadding(unsigned char* buffer, size_t original_len) {
+  size_t padding_len = 16 - (original_len % 16);
+  for (size_t i = 0; i < padding_len; i++) {
+    buffer[original_len + i] = padding_len;
+  }
+  return original_len + padding_len;
+}
+
+void generateRandomIV(unsigned char* iv, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    iv[i] = esp_random() & 0xFF;
+  }
+}

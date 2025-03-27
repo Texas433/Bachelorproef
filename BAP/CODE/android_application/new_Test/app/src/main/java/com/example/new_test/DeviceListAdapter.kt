@@ -9,11 +9,11 @@ import android.bluetooth.BluetoothDevice
 
 class DeviceListAdapter(private var devices: List<BluetoothDevice>,private val onDeviceClick: (BluetoothDevice) -> Unit) :
     RecyclerView.Adapter<DeviceListAdapter.DeviceViewHolder>() {
-
     // ViewHolder voor het apparaatitem
     class DeviceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val deviceName: TextView = itemView.findViewById(android.R.id.text1)
     }
+
 
     // Creëer een nieuwe ViewHolder voor elk item
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeviceViewHolder {

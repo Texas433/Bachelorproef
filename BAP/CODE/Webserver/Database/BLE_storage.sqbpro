@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="/home/texas/Desktop/Bachelorproef/BAP/CODE/Webserver/Database/BLE_storage" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure pragmas browser query" current="2"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2214"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,5:mainusers"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="devices" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="63"/><column index="2" value="121"/><column index="3" value="51"/><column index="4" value="71"/><column index="5" value="131"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="sensor_data" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="52"/><column index="2" value="51"/><column index="3" value="87"/><column index="4" value="64"/><column index="5" value="61"/><column index="6" value="131"/><column index="7" value="63"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="sqlite_sequence" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="82"/><column index="2" value="41"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="users" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="51"/><column index="2" value="70"/><column index="3" value="66"/><column index="4" value="43"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1">BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS &quot;devices&quot; (
+	&quot;device_id&quot;	INTEGER PRIMARY KEY AUTOINCREMENT,
+	&quot;mac_address&quot;	TEXT NOT NULL UNIQUE,
+	&quot;user_id&quot;	INTEGER NOT NULL,
+	&quot;is_allowed&quot;	BOOLEAN DEFAULT TRUE,
+	&quot;created_at&quot;	TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	FOREIGN KEY(&quot;user_id&quot;) REFERENCES &quot;users&quot;(&quot;user_id&quot;)
+);
+
+CREATE TABLE IF NOT EXISTS &quot;users&quot; (
+	&quot;user_id&quot;	INTEGER PRIMARY KEY AUTOINCREMENT,
+	&quot;username&quot;	TEXT NOT NULL UNIQUE,
+	&quot;password&quot;	TEXT NOT NULL,
+	&quot;Token&quot;	TEXT UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS &quot;sensor_data&quot; (
+	&quot;data_id&quot;	INTEGER PRIMARY KEY AUTOINCREMENT,
+	&quot;user_id&quot;	INTEGER NOT NULL,
+	&quot;temperature&quot;	REAL,
+	&quot;humidity&quot;	REAL,
+	&quot;pressure&quot;	REAL,
+	&quot;timestamp&quot;	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	&quot;device_id&quot;	INTEGER NOT NULL,
+	FOREIGN KEY(&quot;user_id&quot;) REFERENCES &quot;users&quot;(&quot;user_id&quot;),
+	FOREIGN KEY(&quot;device_id&quot;) REFERENCES &quot;devices&quot;(&quot;device_id&quot;)
+);
+
+-- Voeg admin user toe
+INSERT INTO &quot;users&quot; (&quot;username&quot;,&quot;password&quot;,&quot;Token&quot;) VALUES ('admin','admin', NULL);
+
+-- Voeg devices toe
+INSERT INTO &quot;devices&quot; (&quot;mac_address&quot;, &quot;user_id&quot;) VALUES ('00:1A:7D:DA:71:13', 1);
+INSERT INTO &quot;devices&quot; (&quot;mac_address&quot;, &quot;user_id&quot;) VALUES ('00:1A:7D:DA:71:14', 1);
+
+-- Voeg sensor data toe
+INSERT INTO &quot;sensor_data&quot; (&quot;user_id&quot;,&quot;temperature&quot;,&quot;humidity&quot;,&quot;pressure&quot;,&quot;device_id&quot;) 
+VALUES (1, 24.5, 45.7, 1013.2, 1), 
+       (1, 28.5, 45.3, 1013.1, 2);
+
+COMMIT;</sql><current_tab id="0"/></tab_sql></sqlb_project>

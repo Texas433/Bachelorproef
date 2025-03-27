@@ -1,0 +1,13 @@
+<nav>
+    <div class="nav-links">
+        
+        {% if session.get('token') %}
+        <a href="/dashboard">Dashboard</a>
+        <a href="/data">Archive</a>
+        <a href="/logout">logout</a>
+        {% else %}
+        <a href="/login">Login</a>
+        
+        {% endif %}
+    </div>
+</nav>

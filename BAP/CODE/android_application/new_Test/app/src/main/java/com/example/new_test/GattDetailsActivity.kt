@@ -19,6 +19,10 @@ import androidx.core.content.ContextCompat
 import java.util.UUID
 import android.content.Intent
 import android.widget.Switch
+import android.content.Context
+import java.io.DataOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 class GattDetailsActivity : AppCompatActivity() {
 
@@ -86,6 +90,7 @@ class GattDetailsActivity : AppCompatActivity() {
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 // Wanneer de verbinding succesvol is, services ontdekken
                 gatt?.discoverServices()
+                gatt?.requestMtu(256)  // vraag om een MTU van 256 bytes
             } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
                 runOnUiThread {
                     Toast.makeText(this@GattDetailsActivity, "Verbinding verbroken", Toast.LENGTH_SHORT).show()
@@ -135,6 +140,51 @@ class GattDetailsActivity : AppCompatActivity() {
                 }
             }
         }
+        fun uploadSensorData(token: String, encryptedData: String) {
+            // ✅ Server-URL ophalen
+            val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val serverUrl = sharedPref.getString("server_url", null)
+
+            if (serverUrl == null) {
+                Log.e("GattDetailsActivity", "Geen server-URL ingesteld!")
+                return
+            }
+
+            val urlString = serverUrl.trimEnd('/') + "/upload"
+            val url = URL(urlString)
+
+            val jsonInputString = """{"data":"$encryptedData"}"""
+
+            Thread {
+                try {
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.requestMethod = "POST"
+                    Log.d("GattDetailsActivity", "trying to upload")
+                    connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                    Log.d("GattDetailsActivity", "token: $token")
+                    connection.setRequestProperty("Authorization", "Bearer $token")
+                    connection.doOutput = true
+
+                    val outputStream = DataOutputStream(connection.outputStream)
+                    outputStream.writeBytes(jsonInputString)
+                    outputStream.flush()
+                    outputStream.close()
+
+                    val responseCode = connection.responseCode
+                    val responseMessage = connection.inputStream.bufferedReader().use { it.readText() }
+
+                    if (responseCode == 200) {
+                        Log.d("GattDetailsActivity", "Upload geslaagd: $responseMessage")
+                    } else {
+                        Log.e("GattDetailsActivity", "Fout bij upload: $responseCode - $responseMessage")
+                    }
+
+                    connection.disconnect()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }.start()
+        }
 
         override fun onCharacteristicRead(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
             super.onCharacteristicRead(gatt, characteristic, status)
@@ -161,12 +211,23 @@ class GattDetailsActivity : AppCompatActivity() {
             }
         }
 
+
         override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
             super.onCharacteristicChanged(gatt, characteristic)
             if (characteristic != null) {
                 val value = characteristic.value
-                val result  = value.joinToString(" ") { byte -> "%02X".format(byte) }
+                val result = value.joinToString(" ") { byte -> "%02X".format(byte) }
                 Log.d("GattDetailsActivity", "Notificatie ontvangen: $result")
+
+                // ✅ Token ophalen uit SharedPreferences
+                val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                val token = sharedPref.getString("auth_token", null)
+                if (token != null) {
+                    // 🚀 Upload de ontvangen data
+                    uploadSensorData(token, result)
+                } else {
+                    Log.e("GattDetailsActivity", "Geen token gevonden! Gebruiker is niet ingelogd.")
+                }
 
                 // Update de UI met de nieuwe waarde
                 runOnUiThread {
@@ -174,6 +235,7 @@ class GattDetailsActivity : AppCompatActivity() {
                 }
             }
         }
+
     }
 
     // Functie om notificaties in te schakelen voor het kenmerk

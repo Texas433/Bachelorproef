@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block title %}Sensor Data{% endblock %}
+{% block content %}
+<h1> Data archive</h1>
+<div class="container" style="max-width: 80%; margin: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <th>Device ID</th>
+            <th>Temperatuur (°C)</th>
+            <th>Druk (hPa)</th>
+            <th>Vochtigheid (%)</th>
+            <th>Tijdstempel</th>
+        </tr>
+        {% for item in sensor_data %}
+        <tr>
+            <td>{{ item.device_id }}</td>
+            <td>{{ item.temperature }}</td>
+            <td>{{ item.pressure }}</td>
+            <td>{{ item.humidity }}</td>
+            <td>{{ item.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

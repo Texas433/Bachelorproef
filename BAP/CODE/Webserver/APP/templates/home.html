@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<meta http-equiv="refresh" content="1">
+<h1> Dashboard</h1>
+<div class="container">
+
+    <table>
+        <tr>
+            <th>Data ID</th>
+            <th>User ID</th>
+            <th>Temperature</th>
+            <th>Humidity</th>
+            <th>Pressure</th>
+            <th>Timestamp</th>
+        </tr>
+        <tr>
+            <td>{{ sensor_data.data_id }}</td>
+            <td>{{ sensor_data.user_id }}</td>
+            <td>{{ sensor_data.temperature }}</td>
+            <td>{{ sensor_data.humidity }}</td>
+            <td>{{ sensor_data.pressure }}</td>
+            <td>{{ sensor_data.timestamp }}</td>
+        </tr>
+    </table>
+</div>
+
+{% endblock %}

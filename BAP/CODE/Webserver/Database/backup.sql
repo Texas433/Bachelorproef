@@ -1,22 +1,23 @@
 BEGIN TRANSACTION;
+
 CREATE TABLE IF NOT EXISTS "devices" (
-	"device_id"	INTEGER,
+	"device_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"mac_address"	TEXT NOT NULL UNIQUE,
 	"user_id"	INTEGER NOT NULL,
 	"is_allowed"	BOOLEAN DEFAULT TRUE,
 	"created_at"	TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	FOREIGN KEY("user_id") REFERENCES "users"("user_id"),
-	PRIMARY KEY("device_id" AUTOINCREMENT)
+	FOREIGN KEY("user_id") REFERENCES "users"("user_id")
 );
+
 CREATE TABLE IF NOT EXISTS "users" (
-	"user_id"	INTEGER,
+	"user_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"username"	TEXT NOT NULL UNIQUE,
 	"password"	TEXT NOT NULL,
-	"Token"	INTEGER UNIQUE,
-	PRIMARY KEY("user_id" AUTOINCREMENT)
+	"Token"	TEXT UNIQUE
 );
+
 CREATE TABLE IF NOT EXISTS "sensor_data" (
-	"data_id"	INTEGER,
+	"data_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"user_id"	INTEGER NOT NULL,
 	"temperature"	REAL,
 	"humidity"	REAL,
@@ -24,11 +25,20 @@ CREATE TABLE IF NOT EXISTS "sensor_data" (
 	"timestamp"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"device_id"	INTEGER NOT NULL,
 	FOREIGN KEY("user_id") REFERENCES "users"("user_id"),
-	FOREIGN KEY("device_id") REFERENCES "devices"("device_id"),
-	PRIMARY KEY("data_id" AUTOINCREMENT)
+	FOREIGN KEY("device_id") REFERENCES "devices"("device_id")
 );
-INSERT INTO "users" ("user_id","username","password","Token") VALUES (1,'admin','admin','');
-INSERT INTO "sensor_data" ("data_id","user_id","temperature","humidity","pressure","timestamp","device_id") VALUES (1,1,0.0,0.0,0.0,'2025-02-14 15:25:18',0),
- (2,1,24.5,45.7,1013.2,'2025-02-14 15:33:25',12),
- (3,1,28.5,45.3,1013.1,'2025-02-14 16:29:02',20);
+
+-- Voeg admin user toe
+INSERT INTO "users" ("username","password","Token") VALUES ('admin','admin', NULL);
+
+-- Voeg devices toe
+INSERT INTO "devices" ("mac_address", "user_id") VALUES ('00:1A:7D:DA:71:13', 1);
+INSERT INTO "devices" ("mac_address", "user_id") VALUES ('00:1A:7D:DA:71:14', 1);
+
+-- Voeg sensor data toe
+INSERT INTO "sensor_data" ("user_id","temperature","humidity","pressure","device_id") 
+VALUES (1, 24.5, 45.7, 1013.2, 1), 
+       (1, 28.5, 45.3, 1013.1, 2);
+
 COMMIT;
+
